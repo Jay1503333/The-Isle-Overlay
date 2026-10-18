@@ -82,6 +82,10 @@ WAYPOINT_ITEM_ROLE = 0
 WAYPOINT_ITEM_VALUE = "active_waypoint"
 
 
+# World units (Unreal cm) the minimap spans edge to edge on first fix: about 1.5 km.
+MINIMAP_DEFAULT_VIEW_WORLD = 150_000.0
+
+
 class MapCanvas(QGraphicsView):
     waypoint_requested = Signal(float, float)
     waypoint_clear_requested = Signal()
@@ -101,6 +105,7 @@ class MapCanvas(QGraphicsView):
         self.repository = repository
         self.state = state
         self.compact = compact
+        self._default_zoom_applied = False
         self._press_position: QPoint | None = None
         self._groups: dict[str, QGraphicsItemGroup] = {}
         self._poi_labels: list[QGraphicsSimpleTextItem] = []
@@ -803,8 +808,33 @@ class MapCanvas(QGraphicsView):
     def _on_position_changed(self, _current: object, _previous: object) -> None:
         self.render_positions()
         self.render_waypoint()
+        if self.compact and not self._default_zoom_applied:
+            self.apply_default_minimap_zoom()
         if self.compact and self.state.settings["player_centered_mode"]:
             self.recenter_on_player()
+
+    def apply_default_minimap_zoom(self) -> None:
+        """On the first position fix, zoom the minimap in to a playable close-up.
+
+        Without this the minimap would keep showing the whole island. It runs once,
+        so a zoom the player chose afterwards is never overridden.
+        """
+
+        self._default_zoom_applied = True
+        width = self.viewport().width()
+        if width <= 0:
+            return
+        x0, y0 = self.calibration.world_to_pixel(0.0, 0.0)
+        x1, y1 = self.calibration.world_to_pixel(MINIMAP_DEFAULT_VIEW_WORLD, 0.0)
+        pixels_for_view = math.hypot(x1 - x0, y1 - y0)
+        if pixels_for_view <= 0:
+            return
+        target = min(20.0, max(0.05, width / pixels_for_view))
+        current = self.transform().m11()
+        if current <= 0:
+            return
+        self.scale(target / current, target / current)
+        self._update_detail_visibility()
 
     def recenter_on_player(self) -> None:
         position = self.state.current_position
