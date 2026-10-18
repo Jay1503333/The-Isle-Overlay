@@ -27,8 +27,10 @@ from PySide6.QtWidgets import (
 from core.overlay_interaction import apply_windows_overlay_input_style
 from core.web_map import (
     clamp_web_map_opacity,
+    LIVE_POSITION_SCRIPT,
     clamp_web_map_zoom,
     map_only_script,
+    parse_live_position,
     sanitize_web_map_url,
 )
 
@@ -42,6 +44,7 @@ MIN_SIZE = (220, 180)
 class WebMapWindow(QWidget):
     interaction_changed = Signal(bool)
     settings_modified = Signal()
+    position_read = Signal(float, float)
 
     def __init__(self, settings: dict, profile_dir: Path) -> None:
         super().__init__()
@@ -54,6 +57,10 @@ class WebMapWindow(QWidget):
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(600)
         self._save_timer.timeout.connect(self._save_geometry)
+
+        self._feed_timer = QTimer(self)
+        self._feed_timer.setInterval(1000)
+        self._feed_timer.timeout.connect(self._poll_position)
 
         self.setWindowTitle("The Isle Companion — Live Web Map")
         self.setMinimumSize(*MIN_SIZE)
@@ -104,6 +111,14 @@ class WebMapWindow(QWidget):
         self._map_only.setChecked(bool(settings.get("web_map_map_only", True)))
         self._map_only.toggled.connect(self._map_only_toggled)
         bar.addWidget(self._map_only)
+
+        self._feed = QCheckBox("Feed mini map", self._bar)
+        self._feed.setToolTip(
+            "Move the round mini map with the dot this live map shows (from the site's own display)"
+        )
+        self._feed.setChecked(bool(settings.get("web_map_feed_position", False)))
+        self._feed.toggled.connect(self._feed_toggled)
+        bar.addWidget(self._feed)
 
         reload_button = QPushButton("⟳", self._bar)
         reload_button.setToolTip("Reload the page")
@@ -175,6 +190,31 @@ class WebMapWindow(QWidget):
     def _apply_map_only(self) -> None:
         if self._view is not None:
             self._view.page().runJavaScript(map_only_script(self._map_only.isChecked()))
+
+    def start_feed_if_enabled(self) -> None:
+        """Load the map in the background (window hidden) and start feeding."""
+
+        if self._feed.isChecked():
+            self._ensure_view()
+            self._feed_timer.start()
+
+    def _feed_toggled(self, enabled: bool) -> None:
+        self._settings["web_map_feed_position"] = bool(enabled)
+        self.settings_modified.emit()
+        if enabled:
+            self._ensure_view()
+            self._feed_timer.start()
+        else:
+            self._feed_timer.stop()
+
+    def _poll_position(self) -> None:
+        if self._view is not None:
+            self._view.page().runJavaScript(LIVE_POSITION_SCRIPT, self._position_text)
+
+    def _position_text(self, text) -> None:
+        parsed = parse_live_position(text)
+        if parsed is not None:
+            self.position_read.emit(parsed[0], parsed[1])
 
     def _map_only_toggled(self, enabled: bool) -> None:
         self._settings["web_map_map_only"] = bool(enabled)
