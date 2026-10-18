@@ -16,6 +16,9 @@
 - New "Live Web Map" toolbar button opens a server's own web map (default https://playorigin.gg/map,
   change `web_map_url` in settings; https only) in an always-on-top window with an opacity slider,
   Reload, drag-to-move, resize, and click-through lock (Edit Web Map unlocks it).
+- Easy to resize: drag any edge or corner; drag the top bar to move; page zoom - / + buttons; compact
+  default size. "Map only" (on by default) hides the site's menus so just the map fills the window
+  (cosmetic, local, only on /map pages, can be switched off).
 - You sign in on the site yourself; the sign-in is kept in `config/web_profile`. Nothing loads until you open
   the window. The Companion does not read the page, touch the game or send any input to it.
 
