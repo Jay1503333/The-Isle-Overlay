@@ -20,6 +20,7 @@
 ### Mini Map
 - Circular mini map is now the default for new installs.
 - New heading arrow showing direction of travel (from the last two positions).
+- Mini map now starts as a close-up (about 1.5 km across) centered on you at the first position fix, instead of showing the whole island. A zoom you choose afterwards is kept.
 - Independent opacity for map content and for buttons/labels.
 
 ### Maps and data
