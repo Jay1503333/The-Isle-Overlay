@@ -194,6 +194,7 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(spacer)
         add_action("How to use", self.open_how_to_use)
         add_action("Settings", self.open_settings)
+        add_action("Exit", self.exit_requested.emit)
 
     def _build_central_widget(self) -> None:
         container = QWidget()
