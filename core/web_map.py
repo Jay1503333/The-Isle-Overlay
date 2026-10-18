@@ -84,6 +84,7 @@ LIVE_POSITION_SCRIPT = (
     "var all=document.querySelectorAll('div,span,p');"
     "for(var i=0;i<all.length;i++){var e=all[i];"
     "if(e.children.length===0&&e.textContent.indexOf('Long:')>-1){out=e.textContent;break;}}}"
+    "if(c.matches(':hover')){window.__cReady=false;}"
     "if(!c.matches(':hover')){var r=m.getBoundingClientRect();"
     "c.dispatchEvent(new MouseEvent('mousemove',{clientX:r.left+11,clientY:r.top+11,bubbles:true}));"
     "window.__cReady=true;}"
