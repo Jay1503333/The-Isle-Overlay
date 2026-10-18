@@ -86,3 +86,28 @@ def test_live_feed_is_off_by_default_and_script_is_one_expression():
     assert DEFAULT_SETTINGS["web_map_feed_position"] is False
     assert "\n" not in LIVE_POSITION_SCRIPT
     assert "fetch(" not in LIVE_POSITION_SCRIPT and "XMLHttp" not in LIVE_POSITION_SCRIPT
+
+
+def test_hiding_with_feed_on_parks_the_window_instead_of_hiding_it(tmp_path):
+    import os
+
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from ui.web_map_window import WebMapWindow
+
+    app = QApplication.instance() or QApplication([])  # noqa: F841
+
+    settings = {"web_map_feed_position": True}
+    window = WebMapWindow(settings, tmp_path)
+    window._view = object()  # pretend the page exists; nothing is loaded
+    window.show()
+    assert window.isVisible()
+    window.hide()
+    assert window._stealth and not window.isVisible()
+    assert window.windowOpacity() < 0.05 and window.width() <= 200
+    window.show()
+    assert not window._stealth and window.isVisible()
+    window._feed.setChecked(False)
+    window.hide()
+    assert not window._stealth
