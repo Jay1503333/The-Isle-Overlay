@@ -43,6 +43,7 @@ from ui.layer_panel import LayerPanel
 from ui.map_canvas import MapCanvas
 from ui.map_fonts import build_map_label_font
 from ui.mini_map import MiniMapWindow
+from ui.web_map_window import WebMapWindow
 from ui.how_to_use_window import HowToUseDialog
 from ui.ocr_setup_window import OcrSetupDialog
 from ui.settings_window import SettingsWindow
@@ -75,6 +76,7 @@ class MainWindow(QMainWindow):
         )
         self.tray_available = False
         self.mini_map: MiniMapWindow | None = None
+        self.web_map: WebMapWindow | None = None
         self._ocr_setup_dialog: OcrSetupDialog | None = None
         self._enable_automatic_after_setup = False
 
@@ -124,6 +126,14 @@ class MainWindow(QMainWindow):
 
         add_action("Layers", self.toggle_layer_panel)
         add_action("Mini Map", self.toggle_mini_map)
+        add_action("Live Web Map", self.toggle_web_map)
+        self.web_map_edit_action = QAction("Edit Web Map", self)
+        self.web_map_edit_action.setCheckable(True)
+        self.web_map_edit_action.setToolTip(
+            "Unlock the Live Web Map for moving/typing, or lock it click-through"
+        )
+        self.web_map_edit_action.triggered.connect(self._set_web_map_interaction)
+        toolbar.addAction(self.web_map_edit_action)
         self.mini_map_edit_action = QAction("Edit Mini Map", self)
         self.mini_map_edit_action.setCheckable(True)
         self.mini_map_edit_action.setToolTip(
@@ -510,6 +520,36 @@ class MainWindow(QMainWindow):
         # the user's explicit dock preference when minimizing/hiding the map.
         self.state.settings["layer_panel_visible"] = not self.layer_dock.isHidden()
         self.settings_store.save()
+
+    def _ensure_web_map(self) -> WebMapWindow:
+        if self.web_map is None:
+            profile_dir = self.settings_store.path.parent / "web_profile"
+            self.web_map = WebMapWindow(self.state.settings, profile_dir)
+            self.web_map.settings_modified.connect(self.settings_store.save)
+            self.web_map.interaction_changed.connect(self._sync_web_map_edit_action)
+        return self.web_map
+
+    def toggle_web_map(self) -> None:
+        window = self._ensure_web_map()
+        if window.isVisible():
+            window.hide()
+        else:
+            window.show()
+            window.raise_()
+            window.set_interaction_enabled(True)
+
+    @Slot(bool)
+    def _set_web_map_interaction(self, enabled: bool) -> None:
+        window = self._ensure_web_map()
+        if enabled and not window.isVisible():
+            window.show()
+        window.set_interaction_enabled(enabled)
+
+    @Slot(bool)
+    def _sync_web_map_edit_action(self, enabled: bool) -> None:
+        self.web_map_edit_action.blockSignals(True)
+        self.web_map_edit_action.setChecked(bool(enabled))
+        self.web_map_edit_action.blockSignals(False)
 
     def toggle_mini_map(self) -> None:
         if self.mini_map is None:
