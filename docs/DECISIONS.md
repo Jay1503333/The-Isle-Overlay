@@ -33,3 +33,11 @@ move the pin, but respawns and teleports still work. The filter is pure Python w
 The Live Web Map window is an ordinary embedded browser that the user opens and signs in to
 themselves. It is opt-in, https-only, never feeds the position filter, and does not read or
 automate the page. The rest of the app stays offline by default.
+
+### Optional feed from the embedded web map to the mini map
+
+The "Feed mini map" option (off by default, user-ticked) lets the mini map follow the
+"YOU" dot of the embedded live map. Guardrails: it only reads the coordinate readout the
+page itself displays for the user's own signed-in session; no site API, token, cookie or
+password is read or called; nothing is read from or sent to the game; the reading goes
+through the normal position filter like clipboard and OCR readings.
