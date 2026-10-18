@@ -1,0 +1,66 @@
+THE ISLE COMPANION - HOW TO RUN ON YOUR PC
+==========================================
+Version: see VERSION.txt in this folder.
+
+You do NOT need to install Python or anything else.
+
+1. EXTRACT
+   Right-click the downloaded .zip and choose "Extract All...".
+   Put the folder somewhere you can write to, like Documents or Desktop.
+   (Not inside Program Files, and don't run it from inside the zip.)
+
+2. START
+   Open the extracted folder and double-click  TheIsleCompanion.exe
+   If Windows SmartScreen says "Windows protected your PC", click
+   "More info" and then "Run anyway". The app is not code-signed, which is
+   what triggers that warning.
+   A "How to get started" window opens the first time.
+
+3. SET UP THE GAME (one time)
+   - In The Isle: Settings > Graphics > Window Mode = BORDERLESS WINDOWED.
+     Overlays cannot appear on top of true Fullscreen.
+   - In The Isle: Settings > Controls > bind a key to "Copy Location".
+
+4. USE IT
+   - Press your Copy Location key in game. Your pin moves on the map.
+   - Click "Mini Map" in the toolbar to show the circular overlay.
+   - The Mini Map ignores clicks so it never gets in your way.
+     Press mouse button 4 (M4) to unlock it for moving, zooming, resizing;
+     press M4 again to lock it. (Change the button in Settings > Shortcuts.)
+   - Bottom-right of the Full Map is the tracking light:
+       green  = a position arrived in the last 45 seconds
+       amber  = waiting for one, or the last one is old
+     It also shows whether the last fix came from Clipboard or OCR.
+   - A sudden huge jump (a bad copy) is ignored. If you really did teleport
+     or respawn, copy your location a second time and it is accepted.
+
+5. OPTIONAL: AUTOMATIC TRACKING (OCR)
+   Open the in-game Tab menu so your coordinates are visible, then use
+   Automatic Tracking > Set up capture area... and drag a tight box around
+   the coordinate line. Capture and preview, save, switch it on.
+   Everything stays on your PC.
+
+PRIVACY AND SAFETY
+   The app never touches The Isle: no memory reading, no injection, no
+   hooks, no input sent to the game. It works offline. Nothing is uploaded.
+
+YOUR SETTINGS
+   Saved in the "config" folder next to the .exe. Delete config\settings.json
+   to reset everything. Logs are in the "logs" folder.
+
+UPDATING MAP DATA LATER
+   The map picture and the marker lists are plain files inside this folder:
+     assets\map\gateway.webp, gateway_water.webp, calibration.json
+     data\*.json
+   After a game update you (or whoever maintains the map) can replace them.
+   See MAP_DATA.md in this folder. Keep calibration.json matched to the image.
+   In the app, "Reload map data" picks up edited data\*.json without a restart.
+
+PROBLEMS?
+   - Overlay not visible: confirm Borderless Windowed, and that "Mini Map"
+     is switched on. It sits on top of the game window.
+   - Pin never moves: check the Copy Location key is bound and pressed; the
+     status light should turn green after a copy.
+   - Pin looks off: the map data may be from an older game version.
+   - Antivirus blocks it: this is an unsigned program. Add the folder to
+     your exclusions only if you trust where you downloaded it.
