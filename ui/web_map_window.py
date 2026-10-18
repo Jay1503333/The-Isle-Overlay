@@ -178,6 +178,11 @@ class WebMapWindow(QWidget):
         self._view = QWebEngineView(self._body)
         self._view.setPage(page)
         self._view.setZoomFactor(clamp_web_map_zoom(self._settings.get("web_map_zoom")))
+        try:  # keep the page live even while this window is hidden
+            page.setLifecycleState(QWebEnginePage.LifecycleState.Active)
+            page.setVisible(True)
+        except Exception:  # pragma: no cover - older Qt builds
+            LOGGER.info("Could not pin the web page as active")
         self._view.loadFinished.connect(lambda _ok: self._apply_map_only())
         self._view.urlChanged.connect(lambda _url: QTimer.singleShot(400, self._apply_map_only))
         self._body.layout().addWidget(self._view)
@@ -224,6 +229,9 @@ class WebMapWindow(QWidget):
             self.position_read.emit(parsed[0], parsed[1])
             return
         note = str(text or "")[:120]
+        path = note.split("path=", 1)[1].split(" ", 1)[0] if "path=" in note else ""
+        if path in ("/dashboard", "/"):
+            self.reload()  # after sign-in the site lands elsewhere; go to the map
         if note != self._last_note:
             self._last_note = note
             LOGGER.info("Web map feed waiting: %s", note or "no answer from page")
