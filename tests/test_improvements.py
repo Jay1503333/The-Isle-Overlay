@@ -95,3 +95,20 @@ def test_click_through_is_default_and_toggles(tmp_path):
     assert not mini.windowFlags() & Qt.WindowType.WindowTransparentForInput
     mini.set_interaction_enabled(False)
     assert mini.windowFlags() & Qt.WindowType.WindowTransparentForInput
+
+
+def test_minimap_zooms_in_on_first_fix_only(tmp_path):
+    app, state, full, mini, _ = _build(tmp_path)
+    mini.show()
+    mini.resize(360, 420)
+    app.processEvents()
+    mini.map_canvas.reset_view()
+    overview = mini.map_canvas.transform().m11()
+    state.update_position(Position.now(-88000, 288000, 0), "clipboard")
+    zoomed = mini.map_canvas.transform().m11()
+    assert zoomed > overview * 3  # a close-up, not the whole island
+    # A zoom the player picks afterwards is not overridden by later fixes.
+    mini.map_canvas.scale(0.5, 0.5)
+    manual = mini.map_canvas.transform().m11()
+    state.update_position(Position.now(-87500, 288500, 0), "clipboard")
+    assert abs(mini.map_canvas.transform().m11() - manual) < 1e-9
