@@ -58,6 +58,7 @@ class WebMapWindow(QWidget):
         self._save_timer.setInterval(600)
         self._save_timer.timeout.connect(self._save_geometry)
 
+        self._stealth = False
         self._polls = 0
         self._last_read = None
         self._last_note = None
@@ -136,7 +137,7 @@ class WebMapWindow(QWidget):
         bar.addWidget(lock_button)
         close_button = QPushButton("✕", self._bar)
         close_button.setToolTip("Hide this window")
-        close_button.clicked.connect(self.hide)
+        close_button.clicked.connect(lambda: self.hide())
         bar.addWidget(close_button)
         layout.addWidget(self._bar)
 
@@ -205,6 +206,10 @@ class WebMapWindow(QWidget):
         if self._feed.isChecked():
             self._ensure_view()
             self._feed_timer.start()
+            # run the page in "hidden" mode (tiny, transparent) from the start
+            QWidget.show(self)
+            self._stealth = True
+            self._apply_stealth_geometry()
 
     def _feed_toggled(self, enabled: bool) -> None:
         self._settings["web_map_feed_position"] = bool(enabled)
@@ -214,6 +219,10 @@ class WebMapWindow(QWidget):
             self._feed_timer.start()
         else:
             self._feed_timer.stop()
+            if self._stealth:
+                self._stealth = False
+                self.setMinimumSize(*MIN_SIZE)
+                QWidget.hide(self)
 
     def _poll_position(self) -> None:
         if self._view is not None:
@@ -267,6 +276,8 @@ class WebMapWindow(QWidget):
         self._save_timer.start()
 
     def _save_geometry(self) -> None:
+        if self._stealth:
+            return
         self._settings["web_map_geometry"] = [self.x(), self.y(), self.width(), self.height()]
         self.settings_modified.emit()
 
@@ -282,8 +293,54 @@ class WebMapWindow(QWidget):
         self.interaction_changed.emit(self._interactive)
 
     def _apply_input_style(self) -> None:
-        if self.isVisible():
-            apply_windows_overlay_input_style(int(self.winId()), self._interactive)
+        if QWidget.isVisible(self):
+            apply_windows_overlay_input_style(
+                int(self.winId()), self._interactive and not self._stealth
+            )
+
+    # -- "hidden" mode that keeps the page running -----------------------
+    # A truly hidden web page is paused by the browser engine and the site stops
+    # updating the player's dot. So while "Feed mini map" is on, hiding the window
+    # parks it as a tiny, almost fully transparent, click-through square in the
+    # screen corner. The user sees nothing; the page keeps running.
+    def isVisible(self) -> bool:  # noqa: N802 - Qt override
+        return QWidget.isVisible(self) and not self._stealth
+
+    def hide(self) -> None:
+        if self._feed.isChecked() and self._view is not None and QWidget.isVisible(self):
+            if not self._stealth:
+                self._save_geometry()
+            self._stealth = True
+            self._apply_stealth_geometry()
+            return
+        self._stealth = False
+        super().hide()
+
+    def _apply_stealth_geometry(self) -> None:
+        screen = self.screen()
+        area = screen.availableGeometry() if screen is not None else None
+        self.setMinimumSize(1, 1)
+        self.resize(160, 120)
+        if area is not None:
+            self.move(area.right() - 161, area.bottom() - 121)
+        self.setWindowOpacity(0.01)
+        QTimer.singleShot(0, self._apply_input_style)
+
+    def show(self) -> None:
+        if self._stealth:
+            self._stealth = False
+            self.setMinimumSize(*MIN_SIZE)
+            geometry = self._settings.get("web_map_geometry")
+            if isinstance(geometry, list) and len(geometry) == 4:
+                x, y, w, h = (int(v) for v in geometry)
+                self.setGeometry(x, y, max(MIN_SIZE[0], w), max(MIN_SIZE[1], h))
+            else:
+                self.resize(*DEFAULT_SIZE)
+            self.setWindowOpacity(clamp_web_map_opacity(self._settings.get("web_map_opacity")))
+            self._apply_input_style()
+            self.raise_()
+            return
+        super().show()
 
     def _opacity_changed(self, value: int) -> None:
         opacity = clamp_web_map_opacity(value / 100.0)
