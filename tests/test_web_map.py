@@ -72,8 +72,8 @@ def test_web_map_window_edges_and_defaults(tmp_path):
 def test_parse_live_position_reads_the_page_readout():
     from core.web_map import parse_live_position
 
-    assert parse_live_position("Lat: -85,578  Long: 485,138") == (485138.0, -85578.0)
-    assert parse_live_position("Lat: 1,200.5 Long: -3,000") == (-3000.0, 1200.5)
+    assert parse_live_position("Lat: -85,578  Long: 485,138") == (-85578.0, 485138.0)
+    assert parse_live_position("Lat: 1,200.5 Long: -3,000") == (1200.5, -3000.0)
     assert parse_live_position("nothing here") is None
     assert parse_live_position(None) is None
     assert parse_live_position("Lat: 99,999,999 Long: 1") is None
