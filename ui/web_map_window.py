@@ -58,6 +58,9 @@ class WebMapWindow(QWidget):
         self._save_timer.setInterval(600)
         self._save_timer.timeout.connect(self._save_geometry)
 
+        self._polls = 0
+        self._last_read = None
+        self._last_note = None
         self._feed_timer = QTimer(self)
         self._feed_timer.setInterval(1000)
         self._feed_timer.timeout.connect(self._poll_position)
@@ -214,7 +217,16 @@ class WebMapWindow(QWidget):
     def _position_text(self, text) -> None:
         parsed = parse_live_position(text)
         if parsed is not None:
+            self._polls += 1
+            if parsed != self._last_read:
+                self._last_read = parsed
+                LOGGER.info("Web map position: x=%.0f y=%.0f", parsed[0], parsed[1])
             self.position_read.emit(parsed[0], parsed[1])
+            return
+        note = str(text or "")[:120]
+        if note != self._last_note:
+            self._last_note = note
+            LOGGER.info("Web map feed waiting: %s", note or "no answer from page")
 
     def _map_only_toggled(self, enabled: bool) -> None:
         self._settings["web_map_map_only"] = bool(enabled)
