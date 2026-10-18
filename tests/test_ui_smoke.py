@@ -158,6 +158,9 @@ def test_full_and_mini_map_render_state(tmp_path):
     assert not mini_map.control_strip.isHidden()
     assert not mini_map.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     assert not mini_map.windowFlags() & Qt.WindowType.WindowTransparentForInput
+    assert state.settings["overlay_shape"] == "circle"  # circular is the default
+    mini_map._toggle_shape()
+    assert state.settings["overlay_shape"] == "square"
     mini_map._toggle_shape()
     assert state.settings["overlay_shape"] == "circle"
     assert not mini_map.mask().isEmpty()

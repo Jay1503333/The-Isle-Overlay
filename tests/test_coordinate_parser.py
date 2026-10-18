@@ -35,3 +35,19 @@ def test_invalid_coordinates(text):
     with pytest.raises(CoordinateParseError):
         parse_coordinates(text)
 
+
+
+def test_parser_rejects_multiline_and_non_coordinate_text():
+    import pytest
+    from core.coordinate_parser import CoordinateParseError, parse_coordinates
+
+    for bad in ["", "hello", "1,2", "1,2,3\n4,5,6", "1e5, 2, 3", "x" * 300]:
+        with pytest.raises(CoordinateParseError):
+            parse_coordinates(bad)
+
+
+def test_parser_accepts_labeled_and_thousands_format():
+    from core.coordinate_parser import parse_coordinates
+
+    parsed = parse_coordinates("X=-88,879.526, Y=288,696.110, Z=21,112.882")
+    assert (parsed.x, parsed.y, parsed.z) == (-88879.526, 288696.110, 21112.882)

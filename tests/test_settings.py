@@ -87,7 +87,7 @@ def test_new_appearance_settings_are_clamped(tmp_path):
         encoding="utf-8",
     )
     values = SettingsStore(path).load()
-    assert values["overlay_shape"] == "square"
+    assert values["overlay_shape"] == "circle"  # invalid value falls back to the new default
     assert values["overlay_interaction_hold_key"] == "M4"
     assert values["poi_label_font_size_full"] == 24
     assert values["poi_label_font_size_mini"] == 6
