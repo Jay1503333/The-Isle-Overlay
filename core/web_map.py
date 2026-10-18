@@ -75,10 +75,10 @@ def map_only_script(enabled: bool) -> str:
 # It never touches the game, the network, or anything outside the web view.
 LIVE_POSITION_SCRIPT = (
     "(function(){"
-    "if(location.pathname.indexOf('/map')!==0)return '';"
     "var c=document.querySelector('.leaflet-container');"
     "var m=document.querySelector('.origin-live-marker');"
-    "if(!c||!m){window.__cReady=false;return '';}"
+    "if(location.pathname.indexOf('/map')!==0||!c||!m){window.__cReady=false;"
+    "return 'DIAG path='+location.pathname+' map='+!!c+' dot='+!!m;}"
     "var out='';"
     "if(window.__cReady&&!c.matches(':hover')){"
     "var all=document.querySelectorAll('div,span,p');"
@@ -87,7 +87,7 @@ LIVE_POSITION_SCRIPT = (
     "if(!c.matches(':hover')){var r=m.getBoundingClientRect();"
     "c.dispatchEvent(new MouseEvent('mousemove',{clientX:r.left+11,clientY:r.top+11,bubbles:true}));"
     "window.__cReady=true;}"
-    "return out;"
+    "return out||('DIAG ready='+window.__cReady+' hover='+c.matches(':hover'));"
     "})()"
 )
 
