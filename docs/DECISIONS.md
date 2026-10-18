@@ -27,3 +27,9 @@ The settings dialog intentionally exposes broad controls such as zone intensity 
 Clipboard and OCR readings pass through one duplicate/outlier filter (`core/position_filter.py`).
 A sudden jump is held back until a second nearby reading confirms it, so one misread cannot
 move the pin, but respawns and teleports still work. The filter is pure Python with no I/O.
+
+## Optional embedded web map
+
+The Live Web Map window is an ordinary embedded browser that the user opens and signs in to
+themselves. It is opt-in, https-only, never feeds the position filter, and does not read or
+automate the page. The rest of the app stays offline by default.
