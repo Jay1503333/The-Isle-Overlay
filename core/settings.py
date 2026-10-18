@@ -18,9 +18,11 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "launch_mini_map_on_startup": False,
     "always_on_top": True,
     "overlay_opacity": 0.88,
+    "overlay_ui_opacity": 1.0,
+    "first_run_completed": False,
     "overlay_size": 360,
     "overlay_borderless": True,
-    "overlay_shape": "square",
+    "overlay_shape": "circle",
     "overlay_interaction_hold_key": "M4",
     "player_centered_mode": True,
     "north_up_mode": True,
@@ -180,6 +182,9 @@ class SettingsStore:
     def _validate(self) -> None:
         _repair_types(self.values, DEFAULT_SETTINGS)
         self.values["overlay_opacity"] = min(1.0, max(0.2, float(self.values["overlay_opacity"])))
+        self.values["overlay_ui_opacity"] = min(
+            1.0, max(0.2, float(self.values["overlay_ui_opacity"]))
+        )
         self.values["overlay_size"] = min(1200, max(180, int(self.values["overlay_size"])))
         if self.values.get("overlay_shape") not in {"square", "circle"}:
             self.values["overlay_shape"] = DEFAULT_SETTINGS["overlay_shape"]

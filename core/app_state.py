@@ -29,8 +29,9 @@ class AppState(QObject):
         self.active_waypoint: Waypoint | None = None
         self.last_movement_heading: float | None = None
         self.last_movement_distance: float = 0.0
+        self.last_source: str | None = None
 
-    def update_position(self, position: Position) -> None:
+    def update_position(self, position: Position, source: str | None = None) -> None:
         if self.current_position is not None:
             if (
                 position.x == self.current_position.x
@@ -42,6 +43,7 @@ class AppState(QObject):
             self.last_movement_heading = heading_degrees(self.previous_position, position)
             self.last_movement_distance = planar_distance(self.previous_position, position)
         self.current_position = position
+        self.last_source = source
         if self.settings["breadcrumbs_enabled"]:
             self.breadcrumbs.append(position)
             self.breadcrumbs_changed.emit()
