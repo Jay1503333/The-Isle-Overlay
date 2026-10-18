@@ -9,6 +9,16 @@
 - GitHub Actions workflow builds the Windows zip on every tag / manual run.
 - App no longer crashes at start-up if its folder is read-only (logging falls back safely).
 
+### Map
+- Water overlay now defaults to 35% opacity so the terrain underneath stays visible (the solid cyan hid land in marsh areas).
+
+### Live web map (optional)
+- New "Live Web Map" toolbar button opens a server's own web map (default https://playorigin.gg/map,
+  change `web_map_url` in settings; https only) in an always-on-top window with an opacity slider,
+  Reload, drag-to-move, resize, and click-through lock (Edit Web Map unlocks it).
+- You sign in on the site yourself; the sign-in is kept in `config/web_profile`. Nothing loads until you open
+  the window. The Companion does not read the page, touch the game or send any input to it.
+
 ### Tracking
 - Duplicate coordinates are ignored.
 - Outlier rejection: a single bad copy / OCR misread can no longer teleport the pin.
