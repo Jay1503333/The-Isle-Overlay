@@ -95,14 +95,17 @@ _READOUT = re.compile(r"Lat:\s*(-?[\d,]+(?:\.\d+)?)\s*Long:\s*(-?[\d,]+(?:\.\d+)
 
 
 def parse_live_position(text: object) -> tuple[float, float] | None:
-    """Parse the page's "Lat: Y  Long: X" readout into game-world (x, y)."""
+    """Parse the page's "Lat: A  Long: B" readout into game-world (x, y).
+
+    The site labels the first number "Lat" but it is the game's X; the second
+    ("Long") is the game's Y (checked against the clipboard coordinates)."""
 
     match = _READOUT.search(str(text or ""))
     if not match:
         return None
     try:
-        y = float(match.group(1).replace(",", ""))
-        x = float(match.group(2).replace(",", ""))
+        x = float(match.group(1).replace(",", ""))
+        y = float(match.group(2).replace(",", ""))
     except ValueError:
         return None
     if abs(x) > 2_000_000 or abs(y) > 2_000_000:
