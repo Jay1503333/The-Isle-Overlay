@@ -67,3 +67,22 @@ def test_web_map_window_edges_and_defaults(tmp_path):
     )
     assert not window._edges_at(QPoint(window.width() // 2, window.height() // 2))
     assert EDGE > 0
+
+
+def test_parse_live_position_reads_the_page_readout():
+    from core.web_map import parse_live_position
+
+    assert parse_live_position("Lat: -85,578  Long: 485,138") == (485138.0, -85578.0)
+    assert parse_live_position("Lat: 1,200.5 Long: -3,000") == (-3000.0, 1200.5)
+    assert parse_live_position("nothing here") is None
+    assert parse_live_position(None) is None
+    assert parse_live_position("Lat: 99,999,999 Long: 1") is None
+
+
+def test_live_feed_is_off_by_default_and_script_is_one_expression():
+    from core.settings import DEFAULT_SETTINGS
+    from core.web_map import LIVE_POSITION_SCRIPT
+
+    assert DEFAULT_SETTINGS["web_map_feed_position"] is False
+    assert "\n" not in LIVE_POSITION_SCRIPT
+    assert "fetch(" not in LIVE_POSITION_SCRIPT and "XMLHttp" not in LIVE_POSITION_SCRIPT
