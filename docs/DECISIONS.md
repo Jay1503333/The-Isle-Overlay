@@ -21,3 +21,9 @@ The overlay should default to click-through during play. Editing mode exists for
 ## Keep map tuning grouped
 
 The settings dialog intentionally exposes broad controls such as zone intensity and marker opacity instead of every raw layer value. The raw values still exist in settings, but the user-facing controls should stay simple.
+
+## Bad readings are ignored, not trusted
+
+Clipboard and OCR readings pass through one duplicate/outlier filter (`core/position_filter.py`).
+A sudden jump is held back until a second nearby reading confirms it, so one misread cannot
+move the pin, but respawns and teleports still work. The filter is pure Python with no I/O.
