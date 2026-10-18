@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from urllib.parse import urlparse
 
 DEFAULT_WEB_MAP_URL = "https://playorigin.gg/map"
@@ -66,3 +67,44 @@ def map_only_script(enabled: bool) -> str:
         "setTimeout(function(){window.dispatchEvent(new Event('resize'));},60);"
         "})();"
     )
+
+
+# --- optional: feed the mini map from the web map's own "YOU" dot -----------------
+# The site already shows where the server says the player is. This asks the page
+# (the user's own signed-in view) for the coordinates it displays for that dot.
+# It never touches the game, the network, or anything outside the web view.
+LIVE_POSITION_SCRIPT = (
+    "(function(){"
+    "if(location.pathname.indexOf('/map')!==0)return '';"
+    "var c=document.querySelector('.leaflet-container');"
+    "var m=document.querySelector('.origin-live-marker');"
+    "if(!c||!m){window.__cReady=false;return '';}"
+    "var out='';"
+    "if(window.__cReady&&!c.matches(':hover')){"
+    "var all=document.querySelectorAll('div,span,p');"
+    "for(var i=0;i<all.length;i++){var e=all[i];"
+    "if(e.children.length===0&&e.textContent.indexOf('Long:')>-1){out=e.textContent;break;}}}"
+    "if(!c.matches(':hover')){var r=m.getBoundingClientRect();"
+    "c.dispatchEvent(new MouseEvent('mousemove',{clientX:r.left+11,clientY:r.top+11,bubbles:true}));"
+    "window.__cReady=true;}"
+    "return out;"
+    "})()"
+)
+
+_READOUT = re.compile(r"Lat:\s*(-?[\d,]+(?:\.\d+)?)\s*Long:\s*(-?[\d,]+(?:\.\d+)?)")
+
+
+def parse_live_position(text: object) -> tuple[float, float] | None:
+    """Parse the page's "Lat: Y  Long: X" readout into game-world (x, y)."""
+
+    match = _READOUT.search(str(text or ""))
+    if not match:
+        return None
+    try:
+        y = float(match.group(1).replace(",", ""))
+        x = float(match.group(2).replace(",", ""))
+    except ValueError:
+        return None
+    if abs(x) > 2_000_000 or abs(y) > 2_000_000:
+        return None
+    return x, y

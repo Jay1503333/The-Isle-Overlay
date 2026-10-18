@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 
 SOURCE_CLIPBOARD = "clipboard"
 SOURCE_OCR = "ocr"
-SOURCE_LABELS = {SOURCE_CLIPBOARD: "Clipboard", SOURCE_OCR: "OCR"}
+SOURCE_WEB_MAP = "web_map"
+SOURCE_LABELS = {SOURCE_CLIPBOARD: "Clipboard", SOURCE_OCR: "OCR", SOURCE_WEB_MAP: "Live web map"}
 
 STALE_AFTER_SECONDS = 45.0
 

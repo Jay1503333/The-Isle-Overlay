@@ -25,6 +25,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "web_map_geometry": [],
     "web_map_map_only": True,
     "web_map_zoom": 1.0,
+    "web_map_feed_position": False,
     "first_run_completed": False,
     "overlay_size": 360,
     "overlay_borderless": True,
