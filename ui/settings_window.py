@@ -274,7 +274,12 @@ class SettingsWindow(QDialog):
             round(float(self._settings["overlay_opacity"]) * 100),
             "overlay",
         )
-        form.addRow("Window opacity", self.opacity)
+        form.addRow("Map opacity", self.opacity)
+        self.ui_opacity = self._opacity_control(
+            round(float(self._settings.get("overlay_ui_opacity", 1.0)) * 100),
+            "overlay_ui",
+        )
+        form.addRow("Buttons and labels opacity", self.ui_opacity)
         layout.addWidget(overlay)
         layout.addStretch()
         return tab
@@ -300,7 +305,7 @@ class SettingsWindow(QDialog):
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(10)
         slider = QSlider(Qt.Orientation.Horizontal)
-        slider.setRange(10 if key != "overlay" else 20, 100)
+        slider.setRange(20 if key.startswith("overlay") else 10, 100)
         slider.setSingleStep(5)
         slider.setPageStep(10)
         slider.setValue(value)
@@ -313,6 +318,8 @@ class SettingsWindow(QDialog):
         row_layout.addWidget(value_label)
         if key == "overlay":
             self._overlay_opacity_slider = slider
+        elif key == "overlay_ui":
+            self._overlay_ui_opacity_slider = slider
         else:
             self._layer_opacity_sliders[key] = slider
         return row
@@ -494,6 +501,7 @@ class SettingsWindow(QDialog):
         for key, checkbox in self._checks.items():
             self._settings[key] = checkbox.isChecked()
         self._settings["overlay_opacity"] = self._overlay_opacity_slider.value() / 100.0
+        self._settings["overlay_ui_opacity"] = self._overlay_ui_opacity_slider.value() / 100.0
         self._settings["overlay_size"] = self.overlay_size.value()
         self._settings["overlay_shape"] = str(self.overlay_shape.currentData())
         self._settings["breadcrumb_max_points"] = self.breadcrumb_limit.value()

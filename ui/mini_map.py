@@ -8,6 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QCursor, QGuiApplication, QMouseEvent, QRegion, QShowEvent
 from PySide6.QtWidgets import (
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QToolButton,
@@ -276,6 +277,25 @@ class MiniMapWindow(QWidget):
         self.resize_handle.resize_requested.connect(self._resize_from_handle)
         self.resize_handle.resize_finished.connect(self._finish_resize)
 
+        # Independent opacity: the window carries the larger of the two values and
+        # per-widget effects scale the other part down.
+        self._opacity_effects = {
+            name: QGraphicsOpacityEffect(widget)
+            for name, widget in (
+                ("map", self.map_canvas),
+                ("ui", self.nearest_poi_label),
+                ("strip", self.control_strip),
+                ("handle", self.resize_handle),
+            )
+        }
+        for name, widget in (
+            ("map", self.map_canvas),
+            ("ui", self.nearest_poi_label),
+            ("strip", self.control_strip),
+            ("handle", self.resize_handle),
+        ):
+            widget.setGraphicsEffect(self._opacity_effects[name])
+
         self.apply_settings()
         self.set_interaction_enabled(False)
 
@@ -302,7 +322,7 @@ class MiniMapWindow(QWidget):
         self.setWindowFlags(self._window_flags())
         size = int(settings["overlay_size"])
         self._set_map_side(size)
-        self.setWindowOpacity(float(settings["overlay_opacity"]))
+        self.apply_opacity()
         self._apply_nearest_label_font()
         self.control_strip.update_state(
             bool(settings["player_centered_mode"]), str(settings["overlay_shape"])
@@ -312,6 +332,23 @@ class MiniMapWindow(QWidget):
         if was_visible:
             self.show()
         QTimer.singleShot(0, self._reapply_input_style)
+
+    def apply_opacity(self) -> None:
+        """Apply map-content and UI-element opacity independently."""
+
+        map_opacity = float(self.state.settings["overlay_opacity"])
+        ui_opacity = float(self.state.settings.get("overlay_ui_opacity", 1.0))
+        window_opacity = max(map_opacity, ui_opacity)
+        self.setWindowOpacity(window_opacity)
+        for name, value in (
+            ("map", map_opacity),
+            ("ui", ui_opacity),
+            ("strip", ui_opacity),
+            ("handle", ui_opacity),
+        ):
+            effect = self._opacity_effects[name]
+            effect.setOpacity(value / window_opacity)
+            effect.setEnabled(value < window_opacity - 1e-6)
 
     def _apply_nearest_label_font(self) -> None:
         settings = self.state.settings

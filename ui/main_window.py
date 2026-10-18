@@ -38,6 +38,7 @@ from core.navigation import (
 )
 from core.settings import SettingsStore
 from core.screen_capture import CaptureRegion
+from core.tracking_status import describe_tracking
 from ui.layer_panel import LayerPanel
 from ui.map_canvas import MapCanvas
 from ui.map_fonts import build_map_label_font
@@ -90,6 +91,15 @@ class MainWindow(QMainWindow):
         state.layers_changed.connect(self._update_nearest_poi)
         state.settings_changed.connect(self._on_settings_changed)
         QTimer.singleShot(0, self.map_canvas.reset_view)
+
+    def show_first_run_guide(self) -> None:
+        """Show the getting-started guide once, then remember that it was seen."""
+
+        if self.state.settings.get("first_run_completed"):
+            return
+        self.state.settings["first_run_completed"] = True
+        self.settings_store.save()
+        HowToUseDialog(self, first_run=True).exec()
 
     def attach_mini_map(self, mini_map: MiniMapWindow) -> None:
         self.mini_map = mini_map
@@ -240,8 +250,28 @@ class MainWindow(QMainWindow):
     def _build_status_bar(self) -> None:
         self.clipboard_status = QLabel("Waiting for copied coordinates")
         self.update_time = QLabel("Last update: —")
+        self.tracking_indicator = QLabel()
+        self.tracking_indicator.setObjectName("trackingIndicator")
         self.statusBar().addWidget(self.clipboard_status, 1)
+        self.statusBar().addPermanentWidget(self.tracking_indicator)
         self.statusBar().addPermanentWidget(self.update_time)
+        self._tracking_timer = QTimer(self)
+        self._tracking_timer.setInterval(1000)
+        self._tracking_timer.timeout.connect(self.refresh_tracking_indicator)
+        self._tracking_timer.start()
+        self.refresh_tracking_indicator()
+
+    def refresh_tracking_indicator(self) -> None:
+        current = self.state.current_position
+        status = describe_tracking(
+            current.timestamp if current else None, self.state.last_source
+        )
+        self.tracking_indicator.setText(status.text)
+        self.tracking_indicator.setStyleSheet(f"color: {status.color}; font-weight: 600;")
+        self.tracking_indicator.setToolTip(
+            "Green: a position arrived in the last 45 seconds. Amber: no recent update - "
+            "copy your location in game (or open the Tab menu if OCR is on)."
+        )
 
     @Slot(object, object)
     def _on_position_changed(self, current: Position, previous: Position | None) -> None:
@@ -249,6 +279,7 @@ class MainWindow(QMainWindow):
         self.coordinate_label.setText(f"X {current.x:,.3f}    Y {current.y:,.3f}    Z {current.z:,.3f}")
         local_time = current.timestamp.astimezone()
         self.update_time.setText(f"Last update: {local_time:%H:%M:%S}")
+        self.refresh_tracking_indicator()
         if previous is None:
             self.previous_label.setText("Previous: —")
             self.heading_label.setText("Heading: —")
@@ -526,7 +557,7 @@ class MainWindow(QMainWindow):
         self.state.settings["overlay_opacity"] = round(value, 2)
         self.settings_store.save()
         if self.mini_map:
-            self.mini_map.setWindowOpacity(value)
+            self.mini_map.apply_opacity()
 
     def reload_map_data(self) -> None:
         self.repository.reload()

@@ -17,9 +17,9 @@ from PySide6.QtWidgets import (
 class HowToUseDialog(QDialog):
     """A short, non-technical guide written for someone already in-game."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, *, first_run: bool = False) -> None:
         super().__init__(parent)
-        self.setWindowTitle("How to use The Isle Companion")
+        self.setWindowTitle("Welcome to The Isle Companion" if first_run else "How to use The Isle Companion")
         self.setMinimumSize(660, 520)
 
         layout = QVBoxLayout(self)
@@ -28,6 +28,7 @@ class HowToUseDialog(QDialog):
 
         tabs = QTabWidget()
         tabs.setDocumentMode(True)
+        tabs.addTab(self._instruction_tab(self._getting_started_text()), "Getting started")
         tabs.addTab(self._instruction_tab(self._main_map_text()), "Main Map")
         tabs.addTab(self._instruction_tab(self._mini_map_text()), "Mini Map")
         tabs.addTab(self._instruction_tab(self._tracking_text()), "Tracking / OCR")
@@ -56,6 +57,38 @@ class HowToUseDialog(QDialog):
         body_layout.addStretch()
         scroll.setWidget(body)
         return scroll
+
+    @staticmethod
+    def _getting_started_text() -> str:
+        return """
+        <h3>Getting started (about two minutes)</h3>
+        <p>The Isle Companion never touches the game. Your position comes only from
+        text you copy in game, or from reading numbers already visible on your screen.</p>
+        <ol>
+          <li><b>Run The Isle in Borderless Windowed mode</b> (Settings &gt; Graphics &gt; Window Mode).
+              Overlays cannot draw above Fullscreen. Borderless looks the same and lets the
+              Mini Map float on top.</li>
+          <li><b>Bind Copy Location.</b> In The Isle open Settings &gt; Controls and bind a key to
+              <b>Copy Location</b> (the one that copies your coordinates to the clipboard).
+              Press it in game whenever you want the map to update.</li>
+          <li><b>Show the Mini Map.</b> Click <b>Mini Map</b> in the toolbar. It starts click-through
+              so your clicks go to the game. Press <b>M4</b> (mouse button 4) to unlock it,
+              press again to lock it.</li>
+          <li><b>Watch the status light</b> at the bottom right of the Full Map. Green means a
+              position arrived recently, amber means it is waiting or stale, and it tells you
+              whether the last fix came from the clipboard or OCR.</li>
+        </ol>
+        <h3>Optional: Automatic Tracking with OCR (Windows)</h3>
+        <ol>
+          <li>Open The Isle's <b>Tab</b> menu so your coordinates are on screen.</li>
+          <li>Choose <b>Automatic Tracking &gt; Set up capture area...</b> and drag a tight box
+              around just the coordinate line.</li>
+          <li>Press <b>Capture and preview</b>. If the preview text reads like your coordinates,
+              save it, then switch <b>Automatic Tracking</b> on.</li>
+          <li>Redo this step if you change resolution or UI scale.</li>
+        </ol>
+        <p>You can reopen this any time from <b>How to use</b>.</p>
+        """
 
     @staticmethod
     def _main_map_text() -> str:

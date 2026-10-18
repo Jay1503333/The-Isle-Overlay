@@ -654,7 +654,48 @@ class MapCanvas(QGraphicsView):
             group.addToGroup(shadow)
             group.addToGroup(halo)
             group.addToGroup(player)
+            heading_item = self._heading_arrow(pixel_x, pixel_y)
+            if heading_item is not None:
+                group.addToGroup(heading_item)
         self.refresh_visibility()
+
+    def _heading_arrow(self, pixel_x: float, pixel_y: float) -> QGraphicsPolygonItem | None:
+        """Bold arrow showing the direction of the last movement, or None if unknown."""
+
+        previous = self.state.previous_position
+        if previous is None or self.state.last_movement_heading is None:
+            return None
+        if self.state.last_movement_distance < 50.0:  # under half a metre: noise
+            return None
+        prev_x, prev_y = self.calibration.world_to_pixel(previous.x, previous.y)
+        dx, dy = pixel_x - prev_x, pixel_y - prev_y
+        if dx == 0 and dy == 0:
+            return None
+        arrow = QGraphicsPolygonItem(
+            QPolygonF(
+                [
+                    QPointF(0, -26),   # tip
+                    QPointF(10, -9),
+                    QPointF(4, -11),
+                    QPointF(4, -4),
+                    QPointF(-4, -4),
+                    QPointF(-4, -11),
+                    QPointF(-10, -9),
+                ]
+            )
+        )
+        arrow.setPos(pixel_x, pixel_y)
+        arrow.setRotation(math.degrees(math.atan2(dx, -dy)))
+        arrow.setBrush(QBrush(QColor("#FFD23F")))
+        pen = QPen(QColor("#0B1A20"), 2)
+        pen.setCosmetic(True)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        arrow.setPen(pen)
+        arrow.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
+        arrow.setToolTip(
+            f"Heading {self.state.last_movement_heading:.0f}° (from your last two positions)"
+        )
+        return arrow
 
     def render_waypoint(self) -> None:
         self._clear_group("waypoint_route")
