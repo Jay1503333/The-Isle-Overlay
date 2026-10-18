@@ -15,7 +15,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
@@ -28,6 +28,9 @@ from core.hotkeys import GlobalHotkeyManager
 from core.linux_overlay_interaction import LinuxToggleInputMonitor
 from core.local_ocr import OcrUnavailableError, WindowsOcrEngine
 from core.models import Position
+from core.position_filter import FilterStatus, PositionFilter
+from core.tracking_status import SOURCE_CLIPBOARD, SOURCE_OCR
+from core.version import APP_NAME, APP_VERSION
 from core.overlay_interaction import ToggleInputMonitor
 from core.screen_capture import CaptureRegion, ScreenCaptureError
 from core.settings import SettingsStore
@@ -40,10 +43,15 @@ LOGGER = logging.getLogger(__name__)
 
 def configure_logging(project_root: Path) -> None:
     log_folder = project_root / "logs"
-    log_folder.mkdir(parents=True, exist_ok=True)
-    handler = RotatingFileHandler(
-        log_folder / "companion.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8"
-    )
+    try:
+        log_folder.mkdir(parents=True, exist_ok=True)
+        handler: logging.Handler = RotatingFileHandler(
+            log_folder / "companion.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+        )
+    except OSError:
+        # Read-only install folder (or a windowed build with no console):
+        # keep running with a harmless handler instead of crashing at startup.
+        handler = logging.NullHandler()
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     logging.basicConfig(level=logging.INFO, handlers=[handler])
 
@@ -93,6 +101,14 @@ class ApplicationController:
             custom_markers_path=project_root / "config" / "custom_markers.json",
         )
         self.state = AppState(settings)
+        self.position_filter = PositionFilter(
+            bounds=(
+                min(calibration.world_min_x, calibration.world_max_x),
+                max(calibration.world_min_x, calibration.world_max_x),
+                min(calibration.world_min_y, calibration.world_max_y),
+                max(calibration.world_min_y, calibration.world_max_y),
+            )
+        )
 
         self.main_window = MainWindow(
             project_root,
@@ -170,13 +186,27 @@ class ApplicationController:
         self.hotkey_manager: GlobalHotkeyManager | None = None
         self.restart_hotkeys()
 
+    def _apply_filtered_position(self, position: Position, source: str) -> bool:
+        """Run a reading through duplicate/outlier rejection, then apply it."""
+
+        result = self.position_filter.check(position)
+        if result.status is FilterStatus.ACCEPTED:
+            self.state.update_position(position, source)
+            return True
+        if result.status is FilterStatus.REJECTED:
+            LOGGER.info("Ignored %s reading: %s", source, result.reason)
+            self.main_window.statusBar().showMessage(
+                f"Ignored a bad reading: {result.reason}", 6000
+            )
+        return False
+
     def _handle_clipboard_position(self, position: Position) -> None:
-        self.state.update_position(position)
-        self.main_window.clipboard_status.setText("Position updated from copied coordinates")
+        if self._apply_filtered_position(position, SOURCE_CLIPBOARD):
+            self.main_window.clipboard_status.setText("Position updated from copied coordinates")
 
     def _handle_automatic_position(self, position: Position) -> None:
-        self.state.update_position(position)
-        self.main_window.clipboard_status.setText("Position updated from Automatic Tracking")
+        if self._apply_filtered_position(position, SOURCE_OCR):
+            self.main_window.clipboard_status.setText("Position updated from Automatic Tracking")
 
     def _automatic_tracking_unavailable(self, reason: str) -> None:
         self.state.settings["automatic_tracking_enabled"] = False
@@ -286,6 +316,7 @@ class ApplicationController:
 
     def start(self) -> None:
         self.main_window.show()
+        QTimer.singleShot(400, self.main_window.show_first_run_guide)
         if self.state.settings["launch_mini_map_on_startup"]:
             self.mini_map.show()
         self.set_automatic_tracking(
@@ -327,10 +358,12 @@ def main() -> int:
     configure_logging(project_root)
     LOGGER.info("Application startup")
     app = QApplication(sys.argv)
-    app.setApplicationName("The Isle Companion")
+    app.setApplicationName(APP_NAME)
+    app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName("Local")
     app.setWindowIcon(create_app_icon())
     app.setStyleSheet(DARK_STYLESHEET)
+    LOGGER.info("%s %s", APP_NAME, APP_VERSION)
     controller = ApplicationController(app, project_root)
     controller.start()
     return app.exec()

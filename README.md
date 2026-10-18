@@ -8,6 +8,15 @@ The app is meant to be a small second-screen companion rather than anything inva
 
 Windows also supports optional Automatic Tracking using local OCR.
 
+## Just want to run it? (Windows, no Python)
+
+Download `TheIsleCompanion-<version>-windows.zip` (built by the *Build Windows package* GitHub
+Action, or by `build_windows.bat` on your own PC), extract it, and double-click
+`TheIsleCompanion.exe`. Read `HOW_TO_RUN.txt` inside. Details of what changed: `CHANGELOG.md`.
+To build it yourself: install Python 3.11+, then double-click `build_windows.bat`
+(or run `py tools/build_exe.py` after `py -m pip install -r requirements-dev.txt`).
+Refreshing map data after a game update: `docs/MAP_DATA.md`.
+
 ## Quick note about the Mini Map
 
 By default, the hotkey for making the Mini Map editable is **Mouse Button 4 (M4)**. You can change it in Settings.
