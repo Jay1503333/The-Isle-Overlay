@@ -366,6 +366,15 @@ def main() -> int:
     )
     configure_logging(project_root)
     LOGGER.info("Application startup")
+    # The optional web map must keep updating while its window is hidden, so stop
+    # Chromium from throttling or pausing it in the background.
+    flags = os.environ.get("QTWEBENGINE_CHROMIUM_FLAGS", "")
+    extra = (
+        "--disable-background-timer-throttling "
+        "--disable-renderer-backgrounding "
+        "--disable-backgrounding-occluded-windows"
+    )
+    os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = (flags + " " + extra).strip()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationVersion(APP_VERSION)
