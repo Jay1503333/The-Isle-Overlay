@@ -38,3 +38,32 @@ def test_web_map_window_builds_without_loading_anything(tmp_path):
     window.set_interaction_enabled(False)
     assert not window.interaction_enabled
     assert app is not None
+
+
+def test_zoom_is_clamped_and_map_only_script_is_safe():
+    from core.web_map import MAP_ONLY_STYLE_ID, clamp_web_map_zoom, map_only_script
+
+    assert clamp_web_map_zoom(9) == 1.5
+    assert clamp_web_map_zoom(0) == 0.4
+    assert clamp_web_map_zoom("x") == 1.0
+    on, off = map_only_script(True), map_only_script(False)
+    assert MAP_ONLY_STYLE_ID in on and "&& location.pathname" in on
+    assert "false &&" in off  # turning it off removes the style
+    assert "\n" not in on  # one-line script
+
+
+def test_web_map_window_edges_and_defaults(tmp_path):
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtWidgets import QApplication
+
+    from ui.web_map_window import EDGE, WebMapWindow
+
+    QApplication.instance() or QApplication([])
+    window = WebMapWindow(dict(DEFAULT_SETTINGS), tmp_path / "profile")
+    assert window.width() >= 220 and window.height() >= 180
+    assert window._edges_at(QPoint(1, 1)) == (Qt.Edge.LeftEdge | Qt.Edge.TopEdge)
+    assert window._edges_at(QPoint(window.width() - 1, window.height() - 1)) == (
+        Qt.Edge.RightEdge | Qt.Edge.BottomEdge
+    )
+    assert not window._edges_at(QPoint(window.width() // 2, window.height() // 2))
+    assert EDGE > 0
