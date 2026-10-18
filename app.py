@@ -29,7 +29,7 @@ from core.linux_overlay_interaction import LinuxToggleInputMonitor
 from core.local_ocr import OcrUnavailableError, WindowsOcrEngine
 from core.models import Position
 from core.position_filter import FilterStatus, PositionFilter
-from core.tracking_status import SOURCE_CLIPBOARD, SOURCE_OCR
+from core.tracking_status import SOURCE_CLIPBOARD, SOURCE_OCR, SOURCE_WEB_MAP
 from core.version import APP_NAME, APP_VERSION
 from core.overlay_interaction import ToggleInputMonitor
 from core.screen_capture import CaptureRegion, ScreenCaptureError
@@ -135,6 +135,10 @@ class ApplicationController:
         self.clipboard_monitor = ClipboardCoordinateMonitor(app.clipboard())
         self.clipboard_monitor.position_copied.connect(self._handle_clipboard_position)
 
+        web_map = self.main_window._ensure_web_map()
+        web_map.position_read.connect(self._handle_web_map_position)
+        web_map.start_feed_if_enabled()
+
         self.automatic_tracker: AutomaticCoordinateTracker | None = None
         if self.windows_features:
             self.automatic_tracker = AutomaticCoordinateTracker(
@@ -203,6 +207,11 @@ class ApplicationController:
     def _handle_clipboard_position(self, position: Position) -> None:
         if self._apply_filtered_position(position, SOURCE_CLIPBOARD):
             self.main_window.clipboard_status.setText("Position updated from copied coordinates")
+
+    def _handle_web_map_position(self, x: float, y: float) -> None:
+        position = Position.now(x, y, 0.0)
+        if self._apply_filtered_position(position, SOURCE_WEB_MAP):
+            self.main_window.clipboard_status.setText("Position updated from the live web map")
 
     def _handle_automatic_position(self, position: Position) -> None:
         if self._apply_filtered_position(position, SOURCE_OCR):

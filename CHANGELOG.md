@@ -12,6 +12,13 @@
 ### Map
 - Water overlay now defaults to 35% opacity so the terrain underneath stays visible (the solid cyan hid land in marsh areas).
 
+### Live web map → mini map feed (optional, off by default)
+- "Feed mini map" tick-box in the web map bar: the round mini map follows the dot the
+  live web map already shows (the site's own display of where the server says you are),
+  so no copying is needed. It reads that on-page readout once a second; it does not
+  touch the game, its memory or any private API, and it still goes through the same
+  bad-reading filter. The web window can stay closed: it loads in the background.
+
 ### Live web map (optional)
 - New "Live Web Map" toolbar button opens a server's own web map (default https://playorigin.gg/map,
   change `web_map_url` in settings; https only) in an always-on-top window with an opacity slider,
