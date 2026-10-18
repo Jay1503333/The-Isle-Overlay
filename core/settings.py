@@ -11,7 +11,7 @@ from typing import Any
 
 from core.hotkeys import parse_hold_binding
 from core.map_fonts import DEFAULT_MAP_LABEL_FONT_PRESET, MAP_LABEL_FONT_PRESETS
-from core.web_map import clamp_web_map_opacity, sanitize_web_map_url
+from core.web_map import clamp_web_map_opacity, clamp_web_map_zoom, sanitize_web_map_url
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +23,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "web_map_url": "https://playorigin.gg/map",
     "web_map_opacity": 0.85,
     "web_map_geometry": [],
+    "web_map_map_only": True,
+    "web_map_zoom": 1.0,
     "first_run_completed": False,
     "overlay_size": 360,
     "overlay_borderless": True,
@@ -191,6 +193,7 @@ class SettingsStore:
         )
         self.values["web_map_url"] = sanitize_web_map_url(self.values.get("web_map_url"))
         self.values["web_map_opacity"] = clamp_web_map_opacity(self.values.get("web_map_opacity"))
+        self.values["web_map_zoom"] = clamp_web_map_zoom(self.values.get("web_map_zoom"))
         self.values["overlay_size"] = min(1200, max(180, int(self.values["overlay_size"])))
         if self.values.get("overlay_shape") not in {"square", "circle"}:
             self.values["overlay_shape"] = DEFAULT_SETTINGS["overlay_shape"]
