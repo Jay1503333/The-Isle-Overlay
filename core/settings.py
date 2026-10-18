@@ -11,6 +11,7 @@ from typing import Any
 
 from core.hotkeys import parse_hold_binding
 from core.map_fonts import DEFAULT_MAP_LABEL_FONT_PRESET, MAP_LABEL_FONT_PRESETS
+from core.web_map import clamp_web_map_opacity, sanitize_web_map_url
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +20,9 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "always_on_top": True,
     "overlay_opacity": 0.88,
     "overlay_ui_opacity": 1.0,
+    "web_map_url": "https://playorigin.gg/map",
+    "web_map_opacity": 0.85,
+    "web_map_geometry": [],
     "first_run_completed": False,
     "overlay_size": 360,
     "overlay_borderless": True,
@@ -41,7 +45,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "migrations": 0.42,
         "patrol_zones": 0.33,
         "sanctuaries": 0.60,
-        "water": 1.0,
+        "water": 0.35,
         "updrafts": 1.0,
         "locations": 1.0,
         "food": 1.0,
@@ -185,6 +189,8 @@ class SettingsStore:
         self.values["overlay_ui_opacity"] = min(
             1.0, max(0.2, float(self.values["overlay_ui_opacity"]))
         )
+        self.values["web_map_url"] = sanitize_web_map_url(self.values.get("web_map_url"))
+        self.values["web_map_opacity"] = clamp_web_map_opacity(self.values.get("web_map_opacity"))
         self.values["overlay_size"] = min(1200, max(180, int(self.values["overlay_size"])))
         if self.values.get("overlay_shape") not in {"square", "circle"}:
             self.values["overlay_shape"] = DEFAULT_SETTINGS["overlay_shape"]
